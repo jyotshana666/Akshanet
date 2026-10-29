@@ -40,8 +40,10 @@ function createQueue(name: string): Queue {
 
 export const apaarValidationQueue = createQueue('apaar-validation');
 export const notificationQueue = createQueue('notification');
+export const mlScoringQueue = createQueue('ml-scoring');
 
 export const QUEUES = {
   'apaar-validation': apaarValidationQueue,
   'notification': notificationQueue,
+  'ml-scoring': mlScoringQueue,
 } as const;

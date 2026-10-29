@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { validateRecord } from '../services/apaar/validation.service.js';
 import { checkDuplicate } from '../services/apaar/duplicate.service.js';
 import { checkIntake } from '../services/apaar/intake.service.js';
+import { mlScoringQueue } from '../lib/queues.js';
 import type { QueueJob } from '../lib/queues.js';
 
 const QUEUE_KEY = 'queue:apaar-validation';
@@ -33,6 +34,7 @@ async function processJob(job: QueueJob): Promise<void> {
       institution_id: true,
       programme_id: true,
       academic_year: true,
+      upload_id: true,
       verification_status: true,
       student: { select: { name: true, date_of_birth: true, gender: true } },
     },
@@ -75,6 +77,13 @@ async function processJob(job: QueueJob): Promise<void> {
       admission.programme_id,
       admission.academic_year,
     );
+
+    if (admission.upload_id) {
+      await mlScoringQueue.add(`ml-${admission.upload_id}`, {
+        uploadId: admission.upload_id,
+        institutionId: admission.institution_id,
+      });
+    }
   }
 }
 
