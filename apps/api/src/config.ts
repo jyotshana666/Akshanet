@@ -1,0 +1,38 @@
+import { z } from 'zod';
+
+const envSchema = z.object({
+  DATABASE_URL: z.string().url(),
+  REDIS_URL: z.string().url(),
+
+  MINIO_ENDPOINT: z.string().url(),
+  MINIO_ACCESS_KEY: z.string().min(1),
+  MINIO_SECRET_KEY: z.string().min(1),
+  MINIO_BUCKET: z.string().min(1).default('akshanet-uploads'),
+
+  JWT_SECRET: z.string().min(32),
+  JWT_REFRESH_SECRET: z.string().min(32),
+  JWT_ACCESS_EXPIRY: z.string().default('15m'),
+  JWT_REFRESH_EXPIRY: z.string().default('7d'),
+
+  APAAR_API_URL: z.string().url(),
+  APAAR_API_KEY: z.string().min(1),
+
+  ML_SERVICE_URL: z.string().url(),
+
+  API_PORT: z.coerce.number().default(3000),
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+});
+
+export type Env = z.infer<typeof envSchema>;
+
+function loadConfig(): Env {
+  const result = envSchema.safeParse(process.env);
+  if (!result.success) {
+    const formatted = result.error.flatten().fieldErrors;
+    console.error('Invalid environment variables:', formatted);
+    throw new Error('Invalid environment configuration');
+  }
+  return result.data;
+}
+
+export const config = loadConfig();

@@ -1,0 +1,289 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ────────────────────────────────────────────────────
+
+enum UserRole {
+  INSTITUTION_ADMIN
+  INSTITUTION_STAFF
+  STUDENT
+  AICTE_ADMIN
+  AICTE_REVIEWER
+  EMPLOYER
+  SUPER_ADMIN
+}
+
+enum AdmissionStatus {
+  draft
+  submitted
+  apaar_verified
+  data_mismatch
+  apaar_not_found
+  duplicate_flagged
+  intake_exceeded
+  apaar_retry_pending
+  fraud_escalation
+  anomaly_watch
+  student_verified
+  student_flagged
+  submitted_to_aicte
+  aicte_approved
+  rejected
+  transferred
+  withdrawn
+}
+
+enum ConsentType {
+  DATA_SHARING
+  VERIFICATION
+  EMPLOYER_ACCESS
+}
+
+enum ConsentStatus {
+  GRANTED
+  REVOKED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  STATUS_CHANGE
+  LOGIN
+  LOGOUT
+  UPLOAD
+  VERIFY
+  APPROVE
+  REJECT
+  CONSENT_GRANT
+  CONSENT_REVOKE
+}
+
+// ── Institutions ─────────────────────────────────────────────
+
+model Institution {
+  id              String   @id @default(uuid())
+  name            String
+  aicte_id        String   @unique
+  state           String
+  district        String
+  type            String   // e.g. "Engineering", "Pharmacy", "MBA"
+  approved_intake Json     // { "programme_code": max_seats } per academic year
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  users        User[]
+  programmes   Programme[]
+  admissions   Admission[]
+  uploads      Upload[]
+  audit_events AuditEvent[]
+
+  @@map("institutions")
+}
+
+// ── Users (auth identity for all roles) ──────────────────────
+
+model User {
+  id              String      @id @default(uuid())
+  email_hash      String      // SHA-256 hash — never store plaintext
+  mobile_hash     String?     // SHA-256 hash — never store plaintext
+  password_hash   String
+  role            UserRole
+  institution_id  String?
+  is_active       Boolean     @default(true)
+  created_at      DateTime    @default(now())
+  updated_at      DateTime    @updatedAt
+
+  institution  Institution? @relation(fields: [institution_id], references: [id])
+  otp_sessions OtpSession[]
+  uploads      Upload[]
+  audit_events AuditEvent[]
+
+  @@index([email_hash])
+  @@index([institution_id])
+  @@map("users")
+}
+
+// ── Programmes (courses offered by an institution) ───────────
+
+model Programme {
+  id              String   @id @default(uuid())
+  institution_id  String
+  name            String
+  code            String   // e.g. "BTECH-CSE"
+  duration_years  Int
+  approved_intake Int
+  academic_year   String   // e.g. "2025-26"
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  institution Institution @relation(fields: [institution_id], references: [id])
+  admissions  Admission[]
+
+  @@unique([institution_id, code, academic_year])
+  @@map("programmes")
+}
+
+// ── Students ─────────────────────────────────────────────────
+
+model Student {
+  id                String   @id @default(uuid())
+  apaar_id          String   @unique // 12-digit national academic identity
+  name              String
+  date_of_birth     DateTime @db.Date
+  gender            String
+  mobile_hash       String?  // SHA-256 — never store plaintext
+  email_hash        String?  // SHA-256 — never store plaintext
+  apaar_verified_at DateTime?
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  admissions Admission[]
+  consents   Consent[]
+
+  @@index([apaar_id])
+  @@map("students")
+}
+
+// ── Uploads (CSV upload batches) ─────────────────────────────
+
+enum UploadStatus {
+  PENDING
+  MAPPED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Upload {
+  id              String       @id @default(uuid())
+  institution_id  String
+  uploaded_by     String
+  filename        String
+  s3_key          String
+  row_count       Int?
+  column_mapping  Json?        // { csvColumn: akshanetField }
+  status          UploadStatus @default(PENDING)
+  created_count   Int          @default(0)
+  skipped_count   Int          @default(0)
+  failed_count    Int          @default(0)
+  error_details   Json?
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+
+  institution Institution @relation(fields: [institution_id], references: [id])
+  uploader    User        @relation(fields: [uploaded_by], references: [id])
+  admissions  Admission[]
+
+  @@index([institution_id])
+  @@map("uploads")
+}
+
+// ── Admissions ───────────────────────────────────────────────
+
+model Admission {
+  id                  String          @id @default(uuid())
+  student_id          String
+  institution_id      String
+  programme_id        String
+  upload_id           String?
+  apaar_id            String          // denormalized for the unique constraint
+  academic_year       String          // e.g. "2025-26"
+  verification_status AdmissionStatus @default(draft)
+  anomaly_score       Float?          // from ML service, 0.0–1.0
+  anomaly_flags       Json?           // detail from ML scoring
+  rejection_reason    String?
+  submitted_at        DateTime?
+  verified_at         DateTime?
+  approved_at         DateTime?
+  created_at          DateTime        @default(now())
+  updated_at          DateTime        @updatedAt
+
+  student      Student     @relation(fields: [student_id], references: [id])
+  institution  Institution @relation(fields: [institution_id], references: [id])
+  programme    Programme   @relation(fields: [programme_id], references: [id])
+  upload       Upload?     @relation(fields: [upload_id], references: [id])
+  audit_events AuditEvent[]
+
+  @@unique([apaar_id, academic_year])
+  @@index([institution_id, academic_year])
+  @@index([verification_status])
+  @@index([student_id])
+  @@index([upload_id])
+  @@map("admissions")
+}
+
+// ── Audit Events ─────────────────────────────────────────────
+
+model AuditEvent {
+  id              String      @id @default(uuid())
+  actor_id        String
+  institution_id  String?
+  admission_id    String?
+  action          AuditAction
+  target_table    String
+  target_id       String
+  old_value       Json?
+  new_value       Json?
+  ip_address      String?
+  user_agent      String?
+  created_at      DateTime    @default(now())
+
+  actor       User         @relation(fields: [actor_id], references: [id])
+  institution Institution? @relation(fields: [institution_id], references: [id])
+  admission   Admission?   @relation(fields: [admission_id], references: [id])
+
+  @@index([actor_id])
+  @@index([institution_id])
+  @@index([admission_id])
+  @@index([created_at])
+  @@map("audit_events")
+}
+
+// ── Consents ─────────────────────────────────────────────────
+
+model Consent {
+  id           String        @id @default(uuid())
+  student_id   String
+  type         ConsentType
+  status       ConsentStatus @default(GRANTED)
+  granted_at   DateTime      @default(now())
+  revoked_at   DateTime?
+  expires_at   DateTime?
+  ip_address   String?
+  created_at   DateTime      @default(now())
+  updated_at   DateTime      @updatedAt
+
+  student Student @relation(fields: [student_id], references: [id])
+
+  @@index([student_id, type])
+  @@map("consents")
+}
+
+// ── OTP Sessions ─────────────────────────────────────────────
+
+model OtpSession {
+  id           String   @id @default(uuid())
+  user_id      String
+  otp_hash     String   // SHA-256 hash — never store raw OTP
+  purpose      String   // e.g. "login", "verify_mobile"
+  attempts     Int      @default(0)
+  max_attempts Int      @default(3)
+  expires_at   DateTime
+  verified_at  DateTime?
+  created_at   DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@index([user_id, purpose])
+  @@map("otp_sessions")
+}
