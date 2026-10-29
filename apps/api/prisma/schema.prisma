@@ -43,6 +43,15 @@ enum ConsentType {
   DATA_SHARING
   VERIFICATION
   EMPLOYER_ACCESS
+  INSTITUTION
+  AICTE
+  EMPLOYER
+}
+
+enum FlagStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
 }
 
 enum ConsentStatus {
@@ -147,8 +156,10 @@ model Student {
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
 
-  admissions Admission[]
-  consents   Consent[]
+  admissions  Admission[]
+  consents    Consent[]
+  flags       Flag[]
+  access_logs AccessLog[]
 
   @@index([apaar_id])
   @@map("students")
@@ -215,6 +226,7 @@ model Admission {
   programme    Programme   @relation(fields: [programme_id], references: [id])
   upload       Upload?     @relation(fields: [upload_id], references: [id])
   audit_events AuditEvent[]
+  flags        Flag[]
 
   @@unique([apaar_id, academic_year])
   @@index([institution_id, academic_year])
@@ -257,6 +269,8 @@ model Consent {
   id           String        @id @default(uuid())
   student_id   String
   type         ConsentType
+  scope        String?       // INSTITUTION, AICTE, EMPLOYER
+  granted_to   String?       // entity ID the consent is granted to
   status       ConsentStatus @default(GRANTED)
   granted_at   DateTime      @default(now())
   revoked_at   DateTime?
@@ -265,10 +279,53 @@ model Consent {
   created_at   DateTime      @default(now())
   updated_at   DateTime      @updatedAt
 
-  student Student @relation(fields: [student_id], references: [id])
+  student     Student     @relation(fields: [student_id], references: [id])
+  access_logs AccessLog[]
 
   @@index([student_id, type])
+  @@index([student_id, scope])
   @@map("consents")
+}
+
+// ── Flags (student-raised data issues) ───────────────────────
+
+model Flag {
+  id            String     @id @default(uuid())
+  admission_id  String
+  student_id    String
+  field_name    String
+  reason        String
+  status        FlagStatus @default(OPEN)
+  resolved_by   String?
+  resolved_at   DateTime?
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+
+  admission Admission @relation(fields: [admission_id], references: [id])
+  student   Student   @relation(fields: [student_id], references: [id])
+
+  @@index([admission_id])
+  @@index([student_id])
+  @@map("flags")
+}
+
+// ── Access Logs ──────────────────────────────────────────────
+
+model AccessLog {
+  id              String   @id @default(uuid())
+  student_id      String
+  accessor_id     String
+  accessor_role   String
+  fields_accessed String[]
+  consent_id      String?
+  accessed_at     DateTime @default(now())
+
+  student Student  @relation(fields: [student_id], references: [id])
+  consent Consent? @relation(fields: [consent_id], references: [id])
+
+  @@index([student_id])
+  @@index([accessor_id])
+  @@map("access_logs")
 }
 
 // ── Duplicate Pairs ──────────────────────────────────────────

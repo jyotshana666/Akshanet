@@ -20,6 +20,16 @@ const envSchema = z.object({
 
   ML_SERVICE_URL: z.string().url(),
 
+  SMTP_HOST: z.string().default('localhost'),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_USER: z.string().default(''),
+  SMTP_PASS: z.string().default(''),
+  SMTP_FROM: z.string().default('noreply@akshanet.in'),
+
+  TWILIO_SID: z.string().default(''),
+  TWILIO_TOKEN: z.string().default(''),
+  TWILIO_FROM: z.string().default(''),
+
   API_PORT: z.coerce.number().default(3000),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
