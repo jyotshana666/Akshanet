@@ -434,6 +434,74 @@ model EmployerBlock {
   @@map("employer_blocks")
 }
 
+// ── Approval Records (AICTE approves institution submission) ─
+
+model ApprovalRecord {
+  id              String   @id @default(uuid())
+  institution_id  String
+  academic_year   String
+  approved_by     String
+  approved_at     DateTime @default(now())
+  record_count    Int
+  notes           String?
+  created_at      DateTime @default(now())
+
+  @@index([institution_id, academic_year])
+  @@map("approval_records")
+}
+
+// ── Rejection Records ────────────────────────────────────────
+
+model RejectionRecord {
+  id              String    @id @default(uuid())
+  institution_id  String
+  academic_year   String
+  rejected_by     String
+  rejected_at     DateTime  @default(now())
+  reason_codes    String[]
+  custom_note     String?
+  letter_s3_key   String?
+  letter_sent_at  DateTime?
+  created_at      DateTime  @default(now())
+
+  @@index([institution_id, academic_year])
+  @@map("rejection_records")
+}
+
+// ── APH Checklist ────────────────────────────────────────────
+
+model AphChecklist {
+  id                   String   @id @default(uuid())
+  institution_id       String
+  academic_year        String
+  apaar_coverage_pct   Float
+  duplicate_pairs_open Int
+  intake_violations    Int
+  fraud_count          Int
+  unverified_count     Int
+  computed_at          DateTime @default(now())
+
+  @@index([institution_id, academic_year])
+  @@map("aph_checklists")
+}
+
+// ── Scheduled Reports ────────────────────────────────────────
+
+model ScheduledReport {
+  id                String   @id @default(uuid())
+  report_type       String
+  filters           Json
+  cron_expression   String
+  recipient_emails  String[]
+  created_by        String
+  is_active         Boolean  @default(true)
+  last_run_at       DateTime?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  @@map("scheduled_reports")
+}
+
 // ── OTP Sessions ─────────────────────────────────────────────
 
 model OtpSession {

@@ -42,10 +42,12 @@ export const apaarValidationQueue = createQueue('apaar-validation');
 export const notificationQueue = createQueue('notification');
 export const mlScoringQueue = createQueue('ml-scoring');
 export const consentExpiryQueue = createQueue('consent-expiry');
+export const scheduledReportQueue = createQueue('scheduled-report');
 
 export const QUEUES = {
   'apaar-validation': apaarValidationQueue,
   'notification': notificationQueue,
   'ml-scoring': mlScoringQueue,
   'consent-expiry': consentExpiryQueue,
+  'scheduled-report': scheduledReportQueue,
 } as const;
