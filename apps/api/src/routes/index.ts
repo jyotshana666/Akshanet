@@ -4,6 +4,7 @@ import { institutionRouter } from './institution.routes.js';
 import { apaarRouter } from './apaar.routes.js';
 import { mlRouter } from './ml.routes.js';
 import { studentRouter } from './student.routes.js';
+import { employerRouter } from './employer.routes.js';
 
 export const apiRouter: RouterType = Router();
 
@@ -16,3 +17,4 @@ apiRouter.use('/institution', institutionRouter);
 apiRouter.use('/apaar', apaarRouter);
 apiRouter.use('/ml', mlRouter);
 apiRouter.use('/', studentRouter);
+apiRouter.use('/', employerRouter);

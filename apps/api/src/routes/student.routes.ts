@@ -9,6 +9,12 @@ import { verifyRecord, flagRecord, getFlags } from '../services/student/verifica
 import { getConsents, revokeConsent } from '../services/student/consent.service.js';
 import { getAccessLog } from '../services/student/accessLog.service.js';
 import { generatePdf, verifyCredential } from '../services/student/credential.service.js';
+import {
+  getPendingRequests,
+  approveConsentByToken,
+  denyConsentByToken,
+} from '../services/employer/consentRequest.service.js';
+import { blockEmployer } from '../services/employer/verification.service.js';
 import { prisma } from '../lib/prisma.js';
 
 export const studentRouter: RouterType = Router();
@@ -254,6 +260,110 @@ studentOnly.get(
       return;
     }
     res.json(result);
+  }),
+);
+
+// ── Pending consent requests from employers ────────────────
+
+studentOnly.get(
+  '/consent-requests',
+  asyncHandler(async (req: Request, res: Response) => {
+    const student = await prisma.student.findFirst({
+      where: { id: req.user!.sub },
+      select: { id: true },
+    });
+
+    if (!student) {
+      res.status(404).json({ error: 'Student not found' });
+      return;
+    }
+
+    const requests = await getPendingRequests(student.id);
+    res.json({ requests });
+  }),
+);
+
+// ── Approve consent request via token ──────────────────────
+
+const tokenSchema = z.object({
+  token: z.string().min(1),
+});
+
+studentOnly.post(
+  '/consent-requests/approve',
+  validate(tokenSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const student = await prisma.student.findFirst({
+      where: { id: req.user!.sub },
+      select: { id: true },
+    });
+
+    if (!student) {
+      res.status(404).json({ error: 'Student not found' });
+      return;
+    }
+
+    const result = await approveConsentByToken(req.body.token, student.id);
+    if (!result.approved) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    res.json({ message: 'Consent granted to employer' });
+  }),
+);
+
+// ── Deny consent request via token ─────────────────────────
+
+studentOnly.post(
+  '/consent-requests/deny',
+  validate(tokenSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const student = await prisma.student.findFirst({
+      where: { id: req.user!.sub },
+      select: { id: true },
+    });
+
+    if (!student) {
+      res.status(404).json({ error: 'Student not found' });
+      return;
+    }
+
+    const result = await denyConsentByToken(req.body.token, student.id);
+    if (!result.denied) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    res.json({ message: 'Consent request denied' });
+  }),
+);
+
+// ── Block employer ─────────────────────────────────────────
+
+const blockSchema = z.object({
+  employerId: z.string().uuid(),
+  reason: z.string().max(500).optional(),
+});
+
+studentOnly.post(
+  '/block-employer',
+  validate(blockSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const student = await prisma.student.findFirst({
+      where: { id: req.user!.sub },
+      select: { id: true },
+    });
+
+    if (!student) {
+      res.status(404).json({ error: 'Student not found' });
+      return;
+    }
+
+    const result = await blockEmployer(student.id, req.body.employerId, req.body.reason);
+    if (!result.blocked) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    res.json({ message: 'Employer blocked' });
   }),
 );
 

@@ -41,9 +41,11 @@ function createQueue(name: string): Queue {
 export const apaarValidationQueue = createQueue('apaar-validation');
 export const notificationQueue = createQueue('notification');
 export const mlScoringQueue = createQueue('ml-scoring');
+export const consentExpiryQueue = createQueue('consent-expiry');
 
 export const QUEUES = {
   'apaar-validation': apaarValidationQueue,
   'notification': notificationQueue,
   'ml-scoring': mlScoringQueue,
+  'consent-expiry': consentExpiryQueue,
 } as const;

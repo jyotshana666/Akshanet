@@ -156,10 +156,12 @@ model Student {
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
 
-  admissions  Admission[]
-  consents    Consent[]
-  flags       Flag[]
-  access_logs AccessLog[]
+  admissions       Admission[]
+  consents         Consent[]
+  flags            Flag[]
+  access_logs      AccessLog[]
+  consent_requests ConsentRequest[]
+  employer_blocks  EmployerBlock[]
 
   @@index([apaar_id])
   @@map("students")
@@ -350,6 +352,86 @@ model DuplicatePair {
   @@index([apaar_id, academic_year])
   @@index([status])
   @@map("duplicate_pairs")
+}
+
+// ── Employers ────────────────────────────────────────────────
+
+enum EmployerStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Employer {
+  id                 String         @id @default(uuid())
+  user_id            String         @unique
+  company_name       String
+  cin                String         @unique
+  industry           String
+  website            String?
+  contact_name       String
+  contact_email_hash String
+  status             EmployerStatus @default(PENDING)
+  approved_by        String?
+  approved_at        DateTime?
+  rejected_reason    String?
+  created_at         DateTime       @default(now())
+  updated_at         DateTime       @updatedAt
+
+  consent_requests ConsentRequest[]
+  blocks_received  EmployerBlock[]
+
+  @@index([status])
+  @@index([cin])
+  @@map("employers")
+}
+
+// ── Consent Requests (employer → student) ────────────────────
+
+enum ConsentRequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+  EXPIRED
+}
+
+model ConsentRequest {
+  id           String               @id @default(uuid())
+  employer_id  String
+  student_id   String
+  apaar_id     String
+  purpose      String
+  token        String               @unique
+  status       ConsentRequestStatus @default(PENDING)
+  expires_at   DateTime
+  responded_at DateTime?
+  created_at   DateTime             @default(now())
+  updated_at   DateTime             @updatedAt
+
+  employer Employer @relation(fields: [employer_id], references: [id])
+  student  Student  @relation(fields: [student_id], references: [id])
+
+  @@index([employer_id])
+  @@index([student_id])
+  @@index([token])
+  @@index([status, expires_at])
+  @@map("consent_requests")
+}
+
+// ── Employer Blocks (student blocks employer) ────────────────
+
+model EmployerBlock {
+  id          String   @id @default(uuid())
+  student_id  String
+  employer_id String
+  reason      String?
+  created_at  DateTime @default(now())
+
+  student  Student  @relation(fields: [student_id], references: [id])
+  employer Employer @relation(fields: [employer_id], references: [id])
+
+  @@unique([student_id, employer_id])
+  @@map("employer_blocks")
 }
 
 // ── OTP Sessions ─────────────────────────────────────────────
