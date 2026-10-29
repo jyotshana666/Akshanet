@@ -199,6 +199,8 @@ model Admission {
   apaar_id            String          // denormalized for the unique constraint
   academic_year       String          // e.g. "2025-26"
   verification_status AdmissionStatus @default(draft)
+  apaar_risk_score    Float?          // risk score from APAAR validation
+  apaar_validated_at  DateTime?       // when APAAR validation completed
   anomaly_score       Float?          // from ML service, 0.0–1.0
   anomaly_flags       Json?           // detail from ML scoring
   rejection_reason    String?
@@ -267,6 +269,30 @@ model Consent {
 
   @@index([student_id, type])
   @@map("consents")
+}
+
+// ── Duplicate Pairs ──────────────────────────────────────────
+
+enum DuplicateStatus {
+  OPEN
+  RESOLVED
+}
+
+model DuplicatePair {
+  id             String          @id @default(uuid())
+  apaar_id       String
+  admission_id_a String
+  admission_id_b String
+  academic_year  String
+  status         DuplicateStatus @default(OPEN)
+  resolved_by    String?
+  resolved_at    DateTime?
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+
+  @@index([apaar_id, academic_year])
+  @@index([status])
+  @@map("duplicate_pairs")
 }
 
 // ── OTP Sessions ─────────────────────────────────────────────

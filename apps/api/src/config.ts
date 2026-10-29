@@ -14,8 +14,9 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRY: z.string().default('15m'),
   JWT_REFRESH_EXPIRY: z.string().default('7d'),
 
-  APAAR_API_URL: z.string().url(),
-  APAAR_API_KEY: z.string().min(1),
+  APAAR_API_URL: z.string().url().default('http://localhost:9999'),
+  APAAR_API_KEY: z.string().min(1).default('mock-key'),
+  APAAR_MOCK: z.string().default('false').transform(v => v === 'true'),
 
   ML_SERVICE_URL: z.string().url(),
 

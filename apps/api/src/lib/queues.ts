@@ -6,13 +6,15 @@ export interface QueueJob {
   createdAt: string;
 }
 
-interface Queue {
+export interface Queue {
   name: string;
   add(jobId: string, data: Record<string, unknown>): Promise<void>;
+  addDelayed(jobId: string, data: Record<string, unknown>, delayMs: number): Promise<void>;
 }
 
 function createQueue(name: string): Queue {
   const queueKey = `queue:${name}`;
+  const delayedKey = `queue:${name}:delayed`;
 
   return {
     name,
@@ -23,6 +25,15 @@ function createQueue(name: string): Queue {
         createdAt: new Date().toISOString(),
       };
       await redis.lpush(queueKey, JSON.stringify(job));
+    },
+    async addDelayed(jobId: string, data: Record<string, unknown>, delayMs: number): Promise<void> {
+      const job: QueueJob = {
+        id: jobId,
+        data,
+        createdAt: new Date().toISOString(),
+      };
+      const executeAt = Date.now() + delayMs;
+      await redis.zadd(delayedKey, executeAt, JSON.stringify(job));
     },
   };
 }
