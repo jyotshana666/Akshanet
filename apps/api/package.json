@@ -8,6 +8,8 @@
     "start": "node dist/index.js",
     "lint": "eslint src/",
     "test": "vitest run",
+    "test:e2e": "vitest run --testPathPattern=e2e",
+    "db:seed": "tsx prisma/seed.ts",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

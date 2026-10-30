@@ -1,0 +1,11 @@
+apaar_id,student_name,date_of_birth,gender,programme_code,academic_year,seat_type,mobile,email
+543210987654,Riya Krishnamoorthy,2003-05-15,Female,B.Tech-CSE,2024-25,GENERAL,9111111101,riya@student.edu
+543210987655,Arjun Mehta,2003-08-22,Male,B.Tech-CSE,2024-25,GENERAL,9111111102,arjun@student.edu
+543210987656,Priya Sundaram,2003-03-10,Female,B.Tech-AIDS,2024-25,OBC,9111111103,priya@student.edu
+543210987657,Karthik Rajan,2003-11-25,Male,B.Tech-ECE,2024-25,GENERAL,9111111104,karthik@student.edu
+000210987658,Meera Nair,2003-06-08,Female,B.Tech-AIDS,2024-25,SC,9111111105,meera@student.edu
+111210987659,Sanjay Gupta,2003-01-30,Male,B.Tech-CSE,2024-25,EWS,9111111106,sanjay@student.edu
+543210987660,Divya Sharma,2003-09-12,Female,B.Tech-ECE,2024-25,GENERAL,9111111107,divya@student.edu
+543210987661,Ananya Iyer,2003-07-05,Female,B.Tech-EEE,2024-25,GENERAL,9111111109,ananya@student.edu
+INVALID_APAAR,Bad Record One,2003-01-01,Male,B.Tech-CSE,2024-25,GENERAL,0000000000,bad1@test.com
+543210987670,,2003-06-15,Other,B.Tech-CSE,2024-25,GENERAL,9111111120,bad2@test.com
