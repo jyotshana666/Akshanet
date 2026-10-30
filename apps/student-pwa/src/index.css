@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+  body {
+    @apply bg-surface text-gray-900 antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
