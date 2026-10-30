@@ -17,6 +17,7 @@
     "db:studio": "pnpm --filter api prisma studio",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
+    "test:smoke": "vitest run --config test/vitest.config.ts",
     "clean": "pnpm -r exec rm -rf node_modules dist .turbo"
   },
   "engines": {

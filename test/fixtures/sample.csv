@@ -1,0 +1,6 @@
+student_name,apaar_id,date_of_birth,gender,programme,branch,year_of_admission,admission_type,state,category,mobile_hash,email_hash,aadhaar_hash,guardian_name
+Rajesh Kumar,123456789012,2004-05-15,Male,B.Tech,Computer Science,2024,Regular,Maharashtra,General,a1b2c3d4e5f6,f6e5d4c3b2a1,hash_aadh_001,Suresh Kumar
+Priya Sharma,234567890123,2004-08-22,Female,B.Tech,Electronics,2024,Regular,Delhi,OBC,b2c3d4e5f6a1,e5d4c3b2a1f6,hash_aadh_002,Ramesh Sharma
+Amit Patel,345678901234,2003-12-10,Male,M.Tech,Mechanical,2024,Lateral,Gujarat,SC,c3d4e5f6a1b2,d4c3b2a1f6e5,hash_aadh_003,Dinesh Patel
+Sneha Reddy,456789012345,2004-03-28,Female,B.Tech,Civil,2024,Regular,Telangana,ST,d4e5f6a1b2c3,c3b2a1f6e5d4,hash_aadh_004,Krishna Reddy
+Mohammed Ali,567890123456,2004-07-04,Male,B.Tech,Information Technology,2024,Regular,Karnataka,General,e5f6a1b2c3d4,b2a1f6e5d4c3,hash_aadh_005,Ahmed Ali
